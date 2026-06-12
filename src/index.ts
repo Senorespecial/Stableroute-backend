@@ -114,6 +114,20 @@ app.post("/api/v1/admin/unpause", (_req: Request, res: Response) => {
   paused = false;
   res.json({ paused });
 });
+/** Read a single registered pair. */
+app.get("/api/v1/pairs/:source/:destination", (req: Request, res: Response) => {
+  const { source, destination } = req.params;
+  if (!pairRegistry.has(pairKey(source, destination))) {
+    res.status(404).json({
+      error: "not_found",
+      message: `pair ${source}->${destination} is not registered`,
+      requestId: (req as Request & { id?: string }).id,
+    });
+    return;
+  }
+  res.json({ source, destination, registered: true });
+});
+
 app.get("/api/v1/admin/status", (_req: Request, res: Response) => {
   res.json({ paused });
 });
