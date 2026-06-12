@@ -8,6 +8,30 @@ const PORT = process.env.PORT ?? 3001;
 app.use(cors());
 app.use(express.json({ limit: "100kb" }));
 
+// Per-IP sliding-window rate limiter: 60 requests per 60 second window.
+const RATE_LIMIT_PER_WINDOW = 60;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const rateBuckets = new Map<string, number[]>();
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const ip = req.ip ?? req.socket.remoteAddress ?? "unknown";
+  const now = Date.now();
+  const bucket = (rateBuckets.get(ip) ?? []).filter(
+    (t) => now - t < RATE_LIMIT_WINDOW_MS
+  );
+  if (bucket.length >= RATE_LIMIT_PER_WINDOW) {
+    res.setHeader("Retry-After", "60");
+    res.status(429).json({
+      error: "rate_limited",
+      message: `more than ${RATE_LIMIT_PER_WINDOW} requests per ${RATE_LIMIT_WINDOW_MS / 1000}s`,
+      requestId: (req as Request & { id?: string }).id,
+    });
+    return;
+  }
+  bucket.push(now);
+  rateBuckets.set(ip, bucket);
+  next();
+});
+
 // Request timing — emits a single structured log per finished request
 // and sets Server-Timing.
 app.use((req: Request, res: Response, next: NextFunction) => {
