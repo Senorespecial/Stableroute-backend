@@ -87,6 +87,9 @@ app.post("/api/v1/admin/unpause", (_req: Request, res: Response) => {
   paused = false;
   res.json({ paused });
 });
+app.get("/api/v1/admin/status", (_req: Request, res: Response) => {
+  res.json({ paused });
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pair registry
