@@ -8,6 +8,20 @@ const PORT = process.env.PORT ?? 3001;
 app.use(cors());
 app.use(express.json({ limit: "100kb" }));
 
+// Pause guard: refuses non-idempotent methods with 503 except
+// /admin/unpause, so an operator can always recover.
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (!paused) return next();
+  const m = req.method.toUpperCase();
+  if (m === "GET" || m === "HEAD" || m === "OPTIONS") return next();
+  if (req.path === "/api/v1/admin/unpause") return next();
+  res.status(503).json({
+    error: "service_paused",
+    message: "StableRoute backend is paused",
+    requestId: (req as Request & { id?: string }).id,
+  });
+});
+
 // Per-IP sliding-window rate limiter: 60 requests per 60 second window.
 const RATE_LIMIT_PER_WINDOW = 60;
 const RATE_LIMIT_WINDOW_MS = 60_000;
