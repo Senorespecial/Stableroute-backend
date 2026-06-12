@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 
@@ -433,12 +433,19 @@ const pairKey = (source: string, dest: string) => `${source}::${dest}`;
  * List every registered (source, destination) pair.
  * Response: { pairs: [{ source, destination }, ...] }
  */
-app.get("/api/v1/pairs", (_req: Request, res: Response) => {
+app.get("/api/v1/pairs", (req: Request, res: Response) => {
   const pairs = Array.from(pairRegistry).map((k) => {
     const [source, destination] = k.split("::");
     return { source, destination };
   });
-  res.json({ pairs });
+  const body = JSON.stringify({ pairs });
+  const etag = `W/"${createHash("sha1").update(body).digest("base64").slice(0, 16)}"`;
+  if (req.header("if-none-match") === etag) {
+    res.status(304).end();
+    return;
+  }
+  res.setHeader("ETag", etag);
+  res.type("application/json").send(body);
 });
 
 /**
