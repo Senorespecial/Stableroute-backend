@@ -433,6 +433,30 @@ const parseAmount = (v: unknown): bigint | null => {
   }
 };
 
+app.post("/api/v1/quote/bulk", (req: Request, res: Response) => {
+  const requestId = (req as Request & { id?: string }).id;
+  const { items } = req.body ?? {};
+  if (!Array.isArray(items) || items.length === 0 || items.length > 100) {
+    res.status(400).json({ error: "invalid_request", message: "items must be 1-100 entries", requestId });
+    return;
+  }
+  const results = items.map((it: { source_asset?: unknown; dest_asset?: unknown; amount?: unknown }, i: number) => {
+    const { source_asset, dest_asset, amount } = it ?? {};
+    if (!isAssetCode(source_asset) || !isAssetCode(dest_asset) || parseAmount(amount) === null || source_asset === dest_asset) {
+      return { index: i, ok: false, error: "invalid_item" };
+    }
+    return {
+      index: i,
+      ok: true,
+      source_asset,
+      dest_asset,
+      amount: String(amount),
+      estimated_rate: "1.0",
+    };
+  });
+  res.json({ results });
+});
+
 app.get("/api/v1/quote", (req: Request, res: Response) => {
   const { source_asset, dest_asset, amount } = req.query;
   const requestId = (req as Request & { id?: string }).id;
