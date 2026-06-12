@@ -319,6 +319,7 @@ app.delete("/api/v1/pairs/:source/:destination", (req: Request, res: Response) =
     return;
   }
   pairRegistry.delete(k);
+  recordEvent("pair.unregistered", { source, destination });
   res.status(204).send();
 });
 
@@ -409,6 +410,7 @@ app.post("/api/v1/pairs", (req: Request, res: Response) => {
   const key = pairKey(source, destination);
   const isNew = !pairRegistry.has(key);
   pairRegistry.add(key);
+  recordEvent(isNew ? "pair.registered" : "pair.refreshed", { source, destination });
   res.status(isNew ? 201 : 200).json({ source, destination, registered: true });
 });
 
