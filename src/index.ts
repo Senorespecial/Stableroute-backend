@@ -91,6 +91,39 @@ app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", service: "stableroute-backend" });
 });
 
+app.get("/api/v1/openapi.json", (_req: Request, res: Response) => {
+  res.json({
+    openapi: "3.0.3",
+    info: { title: "StableRoute Backend", version: "1.0.0" },
+    paths: {
+      "/health": { get: { summary: "Shallow health" } },
+      "/api/v1/health/deep": { get: { summary: "Deep health" } },
+      "/api/v1/metrics": { get: { summary: "Prometheus metrics" } },
+      "/api/v1/stats": { get: { summary: "Aggregate snapshot" } },
+      "/api/v1/events": { get: { summary: "Audit log" } },
+      "/api/v1/pairs": { get: { summary: "List pairs" }, post: { summary: "Register pair" } },
+      "/api/v1/pairs/{source}/{destination}": {
+        get: { summary: "Read pair" },
+        delete: { summary: "Unregister pair" },
+      },
+      "/api/v1/pairs/{source}/{destination}/info": { get: { summary: "Pair aggregate" } },
+      "/api/v1/pairs/{source}/{destination}/fee_bps": { patch: { summary: "Set fee" } },
+      "/api/v1/pairs/{source}/{destination}/min": { patch: { summary: "Set min amount" } },
+      "/api/v1/pairs/{source}/{destination}/max": { patch: { summary: "Set max amount" } },
+      "/api/v1/pairs/{source}/{destination}/liquidity": { patch: { summary: "Set liquidity" } },
+      "/api/v1/quote": { get: { summary: "Get a route quote" } },
+      "/api/v1/quote/bulk": { post: { summary: "Bulk quote" } },
+      "/api/v1/api-keys": { get: {}, post: {} },
+      "/api/v1/api-keys/{prefix}": { delete: {} },
+      "/api/v1/webhooks": { get: {}, post: {} },
+      "/api/v1/webhooks/{id}": { delete: {} },
+      "/api/v1/admin/pause": { post: {} },
+      "/api/v1/admin/unpause": { post: {} },
+      "/api/v1/admin/status": { get: {} },
+    },
+  });
+});
+
 app.get("/api/v1/health/deep", (_req: Request, res: Response) => {
   const m = process.memoryUsage();
   res.json({
