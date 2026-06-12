@@ -104,6 +104,23 @@ describe("StableRoute Backend", () => {
     });
   });
 
+  it("registers and removes a webhook", async () => {
+    const create = await request(app)
+      .post("/api/v1/webhooks")
+      .send({ url: "https://example.com/wh", events: ["pair.registered"] });
+    expect(create.status).toBe(201);
+    expect(create.body.id).toMatch(/^wh_/);
+    const del = await request(app).delete(`/api/v1/webhooks/${create.body.id}`);
+    expect(del.status).toBe(204);
+  });
+
+  it("rejects webhook with non-http url", async () => {
+    const res = await request(app)
+      .post("/api/v1/webhooks")
+      .send({ url: "ftp://nope.example", events: ["x"] });
+    expect(res.status).toBe(400);
+  });
+
   it("records and surfaces pair.registered events", async () => {
     await request(app)
       .post("/api/v1/pairs")
