@@ -52,7 +52,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const startNs = process.hrtime.bigint();
   res.on("finish", () => {
     const ms = Number(process.hrtime.bigint() - startNs) / 1_000_000;
-    res.setHeader("Server-Timing", `app;dur=${ms.toFixed(1)}`);
     if (process.env.NODE_ENV !== "test") {
       console.log(
         JSON.stringify({
