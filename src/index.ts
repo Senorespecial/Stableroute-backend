@@ -129,6 +129,21 @@ const defaultMeta = (): PairMeta => ({
   liquidity: "0",
 });
 
+type ApiKeyRecord = { label: string; createdAt: number };
+const apiKeyStore = new Map<string, ApiKeyRecord>();
+
+app.post("/api/v1/api-keys", (req: Request, res: Response) => {
+  const { label } = req.body ?? {};
+  const requestId = (req as Request & { id?: string }).id;
+  if (typeof label !== "string" || label.length === 0 || label.length > 64) {
+    res.status(400).json({ error: "invalid_request", message: "label must be 1-64 chars", requestId });
+    return;
+  }
+  const key = `srk_${randomUUID().replace(/-/g, "")}`;
+  apiKeyStore.set(key, { label, createdAt: Date.now() });
+  res.status(201).json({ key, label });
+});
+
 type WebhookRecord = { url: string; events: string[]; createdAt: number };
 const webhookStore = new Map<string, WebhookRecord>();
 
